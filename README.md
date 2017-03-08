@@ -1,3 +1,3 @@
 # select-jerarquico
 
-[https://florenperetti.github.io/select-jerarquico/](Demo)
+[Demo](https://florenperetti.github.io/select-jerarquico/)
