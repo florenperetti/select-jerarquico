@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>select</title>
+	<style type="text/css">
+		* {
+			box-sizing: border-box;
+		}
+		select {
+			width: 100%;
+		}
+		div {
+			display: inline-block;
+			width: 24%;
+		}
+	</style>
+</head>
+<body>
+<section>
+<form id="buscar">
+<input type="text" name="buscar" autofocus>
+</form>
+</section>
+<section>
+<div>
+<label>Secretarías</label>
+<select id="secretarias">
+</select>
+</div>
+<div>
+<label>Subsecretarías</label>
+<select id="subsecretarias">
+</select>
+</div>
+<div>
+<label>Direcciones</label>
+<select id="direcciones">
+</select>
+</div>
+<div>
+<label>Subdirecciones</label>
+<select id="subdirecciones">
+</select>
+</div>
+</section>
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+
+<script>
+const secretarias = [
+	{
+		"id": 1,
+		"nombre": "Secretaría Privada",
+		"tipo": "secretaria"
+	},
+	{
+		"id": 2,
+		"nombre": "Secretaría de Gobierno, Participación Ciudadana y Desarrollo Social",
+		"tipo": "secretaria"
+	}
+]
+const subsecretarias = [
+	{
+		"id": 1,
+		"nombre": "", // A veces un hijo se salta un padre
+		"padre": 1,
+		"tipo": "subsecretaria"
+	},
+	{
+		"id": 2,
+		"nombre": "Subsecretaría de Gobierno",
+		"padre": 2,
+		"tipo": "subsecretaria"
+	},
+	{
+		"id": 3,
+		"nombre": "Subsecretaría de Participación Ciudadana",
+		"padre": 2,
+		"tipo": "subsecretaria"
+	},
+	{
+		"id": 4,
+		"nombre": "Subsecretaría de Desarrollo Social",
+		"padre": 2,
+		"tipo": "subsecretaria"
+	},
+	{
+		"id": 5,
+		"nombre": "Subsecretaría de Deporte y Recreac",
+		"padre": 2,
+		"tipo": "subsecretaria"
+	}
+]
+const direcciones = [
+	{
+		"id": 1,
+		"nombre": "Ceremonial y Protocolo",
+		"padre": 1,
+		"tipo": "direccion"
+	},
+	{
+		"id": 2,
+		"nombre": "Turismo",
+		"padre": 1,
+		"tipo": "direccion"
+	},
+	{
+		"id": 3,
+		"nombre": "Radio Municipal",
+		"padre": 1,
+		"tipo": "direccion"
+	},
+	{
+		"id": 4,
+		"nombre": "Registro Civil",
+		"padre": 2,
+		"tipo": "direccion"
+	},
+	{
+		"id": 5,
+		"nombre": "Derechos Humanos",
+		"padre": 2,
+		"tipo": "direccion"
+	},
+	{
+		"id": 6,
+		"nombre": "Relaciones Institucionales",
+		"padre": 2,
+		"tipo": "direccion"
+	},
+	{
+		"id": 7,
+		"nombre": "Proteccion Del Consumidor y Mediación Comunitaria",
+		"padre": 2,
+		"tipo": "direccion"
+	},
+	{
+		"id": 8,
+		"nombre": "Políticas Vecinales",
+		"padre": 3,
+		"tipo": "direccion"
+	},
+	{
+		"id": 9,
+		"nombre": "Presupuesto Participativo",
+		"padre": 3,
+		"tipo": "direccion"
+	},
+	{
+		"id": 10,
+		"nombre": "Coordinación De Centros De Participación Comunal",
+		"padre": 3,
+		"tipo": "direccion"
+	}
+]
+const subdirecciones = [
+	{
+		"id": 1,
+		"nombre": "Protocolo",
+		"padre": 1,
+		"tipo": "subdireccion"
+	},
+	{
+		"id": 2,
+		"nombre": "Audiencias",
+		"padre": 1,
+		"tipo": "subdireccion"
+	},
+	{
+		"id": 3,
+		"nombre": "Centro De Participacion Comunal N*1 Centro America",
+		"padre": 10,
+		"tipo": "subdireccion"
+	},
+	{
+		"id": 3,
+		"nombre": "Centro De Participacion Comunal N*2 Monseñor Pablo Cabrera",
+		"padre": 10,
+		"tipo": "subdireccion"
+	}
+]
+
+// Cache
+const $formBuscar = $("#buscar");
+const $selectSecretarias = $("#secretarias");
+const $selectSubsecretarias = $("#subsecretarias");
+const $selectDirecciones = $("#direcciones");
+const $selectSubdirecciones = $("#subdirecciones");
+
+// Funciones
+// A veces un hijo se salta un padre
+const init = () => {
+	let append = "";
+	append += secretarias.map(secretaria => `<option value="${secretaria.id}">${secretaria.nombre}</option>`);
+	$selectSecretarias.append(append);
+
+	$formBuscar.submit(buscarAlguno);
+
+	$selectSecretarias.change(cargarSubsecretarias);
+	$selectSubsecretarias.change(cargarDirecciones);
+	$selectDirecciones.change(cargarSubdirecciones);
+
+	cargarSubsecretarias();
+}
+
+const cargarHijos = ($selectPadre, arrayHijos, $selectHijo) => {
+	const idParent = $selectPadre.find("option:selected").val();
+	let append = arrayHijos.map(hijo => {
+		return hijo.padre == idParent ? `<option value="${hijo.id}" data-parent-id="${hijo.padre}">${hijo.nombre}</option>` : '';
+	});
+	$selectHijo.html('').append(append)
+	$selectHijo.find('option').length > 0 ? $selectHijo.parent().show() : $selectHijo.parent().hide();
+}
+
+const cargarSubsecretarias = () => {
+	cargarHijos($selectSecretarias, subsecretarias, $selectSubsecretarias);
+	cargarDirecciones();
+}
+const cargarDirecciones = () => {
+	cargarHijos($selectSubsecretarias, direcciones, $selectDirecciones);
+	cargarSubdirecciones();
+}
+const cargarSubdirecciones = () => {
+	cargarHijos($selectDirecciones, subdirecciones, $selectSubdirecciones);
+}
+
+// Funciones Búsqueda
+
+const buscarAlguno = e => {
+	e.preventDefault();
+	const string = $formBuscar.find("input").val().trim().toLowerCase();
+	let resultado = secretarias.find(compararConNombre(string));
+	if (resultado) {
+		seleccionarOpcion($selectSecretarias, resultado.nombre);
+	} else {
+		resultado = subsecretarias.find(compararConNombre(string));
+
+		if (resultado === undefined) {
+			resultado = direcciones.find(compararConNombre(string));
+		}
+
+		if (resultado === undefined) {
+			resultado = subdirecciones.find(compararConNombre(string));
+		}
+
+		resultado && seleccionarViaHijos(resultado);
+	}
+}
+const compararConNombre = nombre => elem => elem.nombre.toLowerCase().indexOf(nombre) >= 0;
+
+const seleccionarOpcion = ($select, valor) => {
+	const $option = $select.find("option:contains('"+valor+"')");
+
+	if ($option.length > 0) {
+		$option.prop('selected', true).trigger('change');
+		reiniciarInput();
+	}
+}
+
+const reiniciarInput = () => {
+	$formBuscar.find("input").val();
+}
+
+const seleccionarViaHijos = (hijo, cadaSelect = []) => {
+	if (hijo.padre) {
+		switch (hijo.tipo) {
+			case "subsecretaria": {
+				const padre = secretarias.find(secretaria => secretaria.id === hijo.padre);
+				cadaSelect.unshift(seleccionarOpcion.bind(null, $selectSubsecretarias, hijo.nombre));
+				seleccionarViaHijos(padre, cadaSelect);
+			}; break;
+			case "direccion": {
+				const padre = subsecretarias.find(subsecretaria => subsecretaria.id === hijo.padre);
+				cadaSelect.unshift(seleccionarOpcion.bind(null, $selectDirecciones, hijo.nombre));
+				seleccionarViaHijos(padre, cadaSelect);
+			}; break;
+			case "subdireccion": {
+				const padre = direcciones.find(direccion => direccion.id === hijo.padre);
+				cadaSelect.unshift(seleccionarOpcion.bind(null, $selectSubdirecciones, hijo.nombre));
+				seleccionarViaHijos(padre, cadaSelect);
+			}; break;
+		}
+	} else {
+		// Para elegir el último select antes tiene que seleccionarse la secretaría
+		seleccionarOpcion($selectSecretarias, hijo.nombre);
+		cadaSelect.forEach(func => func());
+	}
+}
+
+// Inicializar
+init();
+
+</script>
+
+</body>
+</html>
